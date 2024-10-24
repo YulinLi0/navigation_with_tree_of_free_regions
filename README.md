@@ -65,6 +65,8 @@ third_party
 ``planner_manage`` has a FSM to manage the pipeline of the framework (including the intermediate goal selecting and dynamic obstacle detection); 
 
 ``Altro`` and ``SDPsolver`` solve the trajectory optimization problem.
+
+A detailed matlab demo for constructing/solving the SOS programming as well as extracting the gradient information is provided in [scaling SDP](https://github.com/lyl00/minimum_scaling_free_region).
 ## Authors
 
 - [@Yulin Li](yline@connect.ust.hk)
