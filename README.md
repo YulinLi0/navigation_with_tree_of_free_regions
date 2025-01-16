@@ -21,6 +21,25 @@ Navigate from different start to goal in three area with different obstacle dens
 
 <img src="docs/forest.gif" width=75%>
 
+<img src="docs/FRTree_long.gif" width=75%>
+---
+
+### Different Shapes in Clutterd Forest
+Navigate from different start to goal with different shape of the robot.
+
+<img src="docs/shape3.gif" width=75%>
+<img src="docs/shape5.gif" width=75%>
+<img src="docs/shape6.gif" width=75%>
+
+---
+
+### Navigation in 3D Environments
+
+Navigate from different start to goal in 3D Environment.
+<img src="docs/3D_1.gif" width=75%>
+<img src="docs/3D_2.gif" width=75%>
+<img src="docs/3D_3.gif" width=75%>
+
 ---
 
 ### Real World 
