@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+  <!-- Start position of waffle robot in scene. -->
+  <arg name="x_pos" default="-3.0" doc="Starting x coordinate of the robot in the simulation scene. "/>
+  <arg name="y_pos" default="1.0"  doc="Starting y coordinate of the robot in the simulation scene. "/>
+  <arg name="z_pos" default="0.0"  doc="Starting z coordinate of the robot in the simulation scene. "/>
+
+  <!-- Load map -->
+  <arg name="map" default="turtlebot3_house.yaml" />  
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find daimon_planner_manage)/maps/$(arg map)"/>  
+
+  <!-- Start gazebo server with turtlebot3_house scene. -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <!-- Documentation taken from http://gazebosim.org/tutorials?tut=ros_roslaunch-->
+    <arg name="world_name" value="$(find turtlebot3_gazebo)/worlds/turtlebot3_house.world"/>
+    <arg name="paused" value="false"/> <!--S tart Gazebo in a paused state-->
+    <arg name="use_sim_time" value="true"/> <!-- Tells ROS nodes asking for time to get the Gazebo-published simulation time, published over the ROS topic /clock-->
+    <arg name="gui" value="true"/> <!-- Launch the user interface window of Gazebo-->
+    <arg name="headless" value="false"/> <!-- Enable gazebo state log recording-->
+    <arg name="debug" value="false"/> <!-- Start gzserver (Gazebo Server) in debug mode using gdb-->
+  </include>
+
+  <!-- Load robot_description param for tf, rviz and gazebo spawn. -->
+  <param name="robot_description" command="$(find xacro)/xacro  $(find daimon_planner_manage)/urdf/turtlebot3_waffle.urdf.xacro"/>
+
+  <!-- Spawn turtlebot into gazebo based on robot_description. -->
+  <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model"
+        args="-urdf -model turtlebot3 -x $(arg x_pos) -y $(arg y_pos) -z $(arg z_pos) -param robot_description"/>
+
+  <!-- Publish turtlebot3 tf's. -->
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="waffle_state_publisher"/>
+
+  <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 100"/>
+
+  <!-- Run a passthrough filter to down-sample the sensor point cloud.-->
+  <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen"/>
+  <node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid pcl_manager" output="screen">
+    <remap from="~input" to="/camera/depth/points"/>
+    <remap from="~output" to="/camera/depth/points_downsampled"/>
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: 0.01
+      filter_limit_max: 6.0  <!-- Limit the range of points to forward to 6 meters in viewing direction-->
+      filter_limit_negative: False
+      leaf_size: 0.05  <!-- Limit the density to 5 cm-->
+    </rosparam>
+  </node>
+
+  <!-- Run fake localization compatible with AMCL output -->  
+  <node pkg="fake_localization" type="fake_localization" name="fake_localization" output="screen" />  
+  <!-- For fake localization we need static transform between /odom and /map -->  
+  <!-- <node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster" args="0 0 0 0 0 0 /map /odom 100" />   -->
+
+  <!-- Launch RViz with the demo configuration. -->
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find daimon_planner_manage)/rviz/turtlebot3_waffle_demo.rviz"/> -->
+
+</launch>

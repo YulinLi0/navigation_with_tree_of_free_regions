@@ -1,0 +1,110 @@
+goal_tolerance: &goal_tolerance 0.05
+
+max_vel: &max_vel 0.6                          # m/s   robot max vel
+max_acc: &max_acc 0.4                        # m/s^2 robot max acc
+max_jerk: &max_jerk 0.2                             # m/s^3 robot max jerk
+
+obstacles_inflation: &obstacles_inflation 0.10       # m
+
+# ----------------------------------------------------------------------------------
+# 1. FSM parameters (fsm/)
+fsm/goal_tolerance: *goal_tolerance
+fsm/check_horizon: 3.0
+fsm/mpc/planning_time: 1.5
+fsm/mpc/delta_time: 0.15
+
+# ----------------------------------------------------------------------------------
+# 2. Plan manager parameter (plan_manager/)
+plan_manager/max_vel: *max_vel
+plan_manager/max_acc: *max_acc
+plan_manager/max_jerk: *max_jerk
+plan_manager/control_points_distance: 0.3
+
+# ----------------------------------------------------------------------------------
+# 4. Bspline optimizer for local traj (optimization/)
+optimization/lambda_smooth: 5.0
+optimization/lambda_collision: 10.5
+optimization/lambda_feasibility: 0.1
+optimization/lambda_fitness: 1.0
+optimization/dist0: 0.5
+optimization/swarm_clearance: 0.1
+optimization/max_vel: *max_vel
+optimization/max_acc_: *max_acc
+optimization/order_: 3
+
+# ----------------------------------------------------------------------------------
+# 5.Global planner are isolated from other part, do not change these tuned parameters #
+# Global planner: kinodynamic Astar (kino_astar/)
+kino_astar/allocate_num: 100000    # allocated memory num for search
+kino_astar/horizon: 200.0          # planning horizon, here as global planner we make it big
+kino_astar/max_vel: *max_vel
+kino_astar/max_acc: *max_acc
+kino_astar/w_time: 10.0            # for calculating g-cost
+kino_astar/max_tau: 2.0         # delta_time
+kino_astar/init_max_tau: 1.0       # init delta_time
+kino_astar/goal_tolerance: *goal_tolerance   # goal tolerance
+kino_astar/resolution_astar: 0.05   # (meter)
+kino_astar/time_resolution: 0.8    # (sec)
+kino_astar/lambda_heu: 2          # coeff for heuritic of the distance
+kino_astar/check_num: 10            # for collision check of each action
+
+# Global planner: global traj bspline optimization (optimization_ESDF/)
+optimization_ESDF/order: 3
+optimization_ESDF/dist0: 0.2
+optimization_ESDF/max_vel: *max_vel
+optimization_ESDF/max_acc: *max_acc
+optimization_ESDF/lambda1: 0.01 #5.0          # smooth
+optimization_ESDF/lambda2: 1.0 #0.6         # distance
+optimization_ESDF/lambda3: 0.5 #0.1          # feasibility
+optimization_ESDF/lambda4: 0.0         # endpoint
+optimization_ESDF/lambda5: 1.5          # guide [no need]
+optimization_ESDF/lambda6: 10.0         #       [no need]
+optimization_ESDF/lambda7: 100.0        # waypoint 
+optimization_ESDF/max_iteration_num1: 2
+optimization_ESDF/max_iteration_num2: 300
+optimization_ESDF/max_iteration_num3: 200
+optimization_ESDF/max_iteration_num4: 200
+optimization_ESDF/max_iteration_time1: 0.0001
+optimization_ESDF/max_iteration_time2: 0.005
+optimization_ESDF/max_iteration_time3: 0.003
+optimization_ESDF/max_iteration_time4: 0.003
+
+# Local Planner:
+optimization_local/lambda1: 10.0     # smooth
+optimization_local/lambda2: 5.0     # distance
+optimization_local/lambda3: 0.1    # feasibility
+optimization_local/lambda4: 0.0   # guide
+optimization_local/lambda5: 100   # endpoint
+optimization_local/dist0: 0.13
+# ----------------------------------------------------------------------------------
+# 6. Mapping (local_map/) 
+local_map/frame_id: map
+#esdf_map/resolution: 0.05
+local_map/use_occ_esdf: true
+
+# inflations (meter)
+local_map/obstacles_inflation: *obstacles_inflation
+
+# occupancy generation
+local_map/p_hit: 0.52
+local_map/p_miss: 0.15
+local_map/p_min: 0.10
+local_map/p_max: 0.75
+local_map/p_occ: 0.70
+
+# local map margin for cell/index
+local_map/esdf_map_margin: 0 
+
+# performance test
+local_map/show_occ_time: false
+local_map/show_esdf_time: false
+
+# ----------------------------------------------------------------------------------
+# 7. MPC
+mpc_local_controller/Q_vec: [20, 20, 8]
+mpc_local_controller/R_vec: [0.1, 0.5]
+mpc_local_controller/Rd_vec: [0.05, 0.05]
+mpc_local_controller/max_acc: 0.1
+mpc_local_controller/min_acc: -0.25
+mpc_local_controller/max_w_dot: 0.25
+mpc_local_controller/max_vel: *max_vel

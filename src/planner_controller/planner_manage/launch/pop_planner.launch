@@ -1,0 +1,31 @@
+<launch>
+    <arg name="odom_topic" default="/odom" />   
+    <!-- <arg name="pointcloud_topic" default="/camera/depth/points_downsampled" /> -->
+    <arg name="scan_topic" default="/scan" />
+    <arg name="goal_topic" default="/move_base_simple/goal" />
+    
+
+    <!-- decomp free region into convex area -->
+    <!-- <node pkg="daimon_local_map" name="local_decomp_node" type="local_decomp_node" output="screen"/> -->
+
+  <!-- Load map -->
+  <arg name="map" default="empty_map.yaml" />  
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find pop_planner)/maps/$(arg map)"/>
+
+    <!-- grid map, global planner, local planner -->
+    <node pkg="pop_planner" name="planner" type="pop_planner_node" output="screen">
+        <!-- plan fsm -->
+        <rosparam file="$(find pop_planner)/launch/config/pop_plan_fsm_param.yaml" command="load" />
+        <remap from ="local_map/odometry/state_estimation" to="$(arg odom_topic)"/>
+        <!-- <remap from ="local_map/pointcloud" to="$(arg pointcloud_topic)"/> -->
+        <remap from ="local_map/scan" to="$(arg scan_topic)"/>    
+        <remap from ="goal" to="$(arg goal_topic)"/>
+    </node>
+    <!-- static transformation between map and odom -->
+    <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 100"/>
+    
+    <!-- POP based safety controller -->
+    <!-- <node pkg="robot_safety_control_problem" name="pop_controller" type="robot_safety_control_problem_node" output="screen">
+    </node> -->
+    <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find daimon_planner_manage)/rviz/turtlebot3_planner_test.rviz" required="true" /> -->
+</launch>   

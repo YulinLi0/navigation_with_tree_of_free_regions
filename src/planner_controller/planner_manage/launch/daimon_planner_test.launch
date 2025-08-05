@@ -1,0 +1,18 @@
+<launch>
+    <arg name="odom_topic" default="/odom" />   
+    <arg name="pointcloud_topic" default="/camera/depth/points_downsampled" />
+    <arg name="scan_topic" default="/scan" />
+    <arg name="goal_topic" default="/move_base_simple/goal" />
+    
+
+    <node pkg="daimon_planner_manage" name="time_space" type="daimon_planner_manage_node" output="screen">
+        <!-- plan fsm -->
+        <rosparam file="$(find daimon_planner_manage)/launch/config/plan_fsm_param.yaml" command="load" /> <!-- ns="fsm" ns="global_costmap" -->
+        <remap from ="local_map/odometry/state_estimation" to="$(arg odom_topic)"/>
+        <remap from ="local_map/pointcloud" to="$(arg pointcloud_topic)"/>
+        <remap from ="local_map/scan" to="$(arg scan_topic)"/>    
+        <remap from ="goal" to="$(arg goal_topic)"/>
+    </node>
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find daimon_planner_manage)/rviz/turtlebot3_planner_test.rviz" required="true" />
+</launch>   

@@ -1,0 +1,18 @@
+<launch>
+    <!-- topic of your odometry -->
+    <arg name="odom_topic" default="/odom" />   
+    <arg name="pointcloud_topic" default="/camera/depth/points_downsampled" />
+    <arg name="scan_topic" default="/scan" />
+
+    <node pkg="daimon_local_map" name="" type="daimon_local_map_node" output="screen">
+        <remap from ="local_map/odometry/state_estimation" to="$(arg odom_topic)"/>
+        <remap from ="local_map/pointcloud" to="$(arg pointcloud_topic)"/>
+        <remap from ="local_map/scan" to="$(arg scan_topic)"/>
+        
+        <param name="local_map/use_occ_esdf"   value="true"/>
+        <param name="local_map/show_esdf_time"  value="false"/>
+        <param name="local_map/show_occ_time"  value="false"/>
+    </node>
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find daimon_local_map)/rviz/local_map_test.rviz" required="true" />
+</launch>
