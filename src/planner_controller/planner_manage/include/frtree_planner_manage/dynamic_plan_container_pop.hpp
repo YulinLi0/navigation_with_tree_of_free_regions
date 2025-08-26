@@ -4,8 +4,6 @@
 #include <Eigen/Eigen>
 #include <ros/ros.h>
 #include <vector>
-#include "daimon_traj_planner/bspline/uniform_bspline.h"
-#include "daimon_traj_planner/polynomial/polynomial_traj.h"
 
 const double PI = 3.14159265358979323846;
 

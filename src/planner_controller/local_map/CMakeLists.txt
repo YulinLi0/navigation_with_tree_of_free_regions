@@ -24,7 +24,7 @@ find_package(PCL 1.7 REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES daimon_local_map
+  LIBRARIES frtree_local_map
   CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs 
 )
 

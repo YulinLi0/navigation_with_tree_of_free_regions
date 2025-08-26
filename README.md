@@ -49,46 +49,53 @@ Navigate from different start to goal in 3D Environment.
 
 </p>
 
-## Implementation
-Code will be released soon, and the folder structure is shown as below:
-```
-local_map
-├── include
-├── launch
-├── rviz
-└── src
-planner_manage
-├── include
-│   ├── planner_manage
-│   ├── Altro
-│   └── SDPsolver
-├── launch
-├── maps
-├── rviz
-├── src
-└── urdf
-DecompROS
-├── decomp_ros_msgs
-├── decomp_ros_utils
-├── decomp_test_node
-└── DecompUtil
-third_party
-├── catkin_simple
-├── geo_utils
-├── modern_robotics
-└── mosek
+## Usage
 
-```
+
 ``local_map``manage the update of the tree; 
 
 ``planner_manage`` has a FSM to manage the pipeline of the framework (including the intermediate goal selecting and dynamic obstacle detection); 
 
-``Altro`` and ``SDPsolver`` solve the trajectory optimization problem.
+``Altro`` and ``SDPsolver`` solve the backend trajectory optimization problem.
 
 A detailed matlab demo for constructing/solving the SOS programming as well as extracting the gradient information is provided in [scaling SDP](https://github.com/lyl00/minimum_scaling_free_region).
+
+### Step 1: build the planner.
+You need to :
+- install the conic programming solver [COPT](https://guide.coap.online/copt/en-doc/intro.html) and get a license.
+- install the numerical optimization library [ALTRO](https://github.com/RoboticExplorationLab/ALTRO)
+- sudo apt install whatever you miss in your system.
+
+Then you can build the catkin workspace with:
+```sh
+catkin build pop_planner
+source devel/setup.bash
+```
+
+### Step 2 Start the planner
+the planner takes three input topics:
+- ``/odom`` (odometry information of your robot)
+- ``/velodyne_points`` (the raw point cloud data)
+- ``/move_base_simple/goal`` (2D navigation goal in rviz)
+
+and output directly the ``/cmd_vel`` which is a ``geometry_msgs::Twist`` message. You need to take care of your robot model and the sensor topics.
+
+Then you can run the planner with:
+```sh
+roslaunch pop_planner pop_planner.launch
+```
+
+
+
+
+## Acknowledgement
+This package utilize extensively the free space decomposition algorithm in [DecompUtil](https://github.com/sikang/DecompUtil).
+
 ## Authors
 
 - [@Yulin Li](yline@connect.ust.hk)
+- [@Zhicheng Song](zsong469@connect.hkust-gz.edu.cn)
+- [@Chunxin Zheng](czheng739@connect.hkust-gz.edu.cn)
 
 Feel free to contact me if you have any questions regarding the implementation of the algorithm.
 

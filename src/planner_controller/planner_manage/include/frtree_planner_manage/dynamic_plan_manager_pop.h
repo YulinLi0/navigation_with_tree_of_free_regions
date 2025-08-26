@@ -23,18 +23,13 @@
 #include <sensor_msgs/LaserScan.h>
 
 // mapping
-#include <daimon_local_map/local_map.h>
-
-
-// global planner
-#include <daimon_path_search/jump_point.h>
-// #include "jps_planner/jps_planner/jps_planner.h"
+#include <frtree_local_map/local_map.h>
 
 // data container
-#include <daimon_planner_manage/dynamic_plan_container_pop.hpp>
+#include <frtree_planner_manage/dynamic_plan_container_pop.hpp>
 
 // graph node
-#include <daimon_planner_manage/global_graph.h>
+#include <frtree_planner_manage/global_graph.h>
 
 #include <decomp_ros_utils/data_ros_utils.h>
 #include <decomp_geometry/ellipsoid.h>

@@ -2,7 +2,7 @@
 <package format="2">
   <name>pop_planner</name>
   <version>0.0.0</version>
-  <description>The daimon_planner_manage package</description>
+  <description>The frtree_planner_manage package</description>
 
   <maintainer email="ri-robot@todo.todo">ri-robot</maintainer>
 
@@ -20,9 +20,7 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
-  <build_depend>daimon_local_map</build_depend>
-  <build_depend>daimon_path_search</build_depend>
-  <build_depend>daimon_traj_planner</build_depend>
+  <build_depend>frtree_local_map</build_depend>
   <build_export_depend>nav_msgs</build_export_depend>
   <build_export_depend>geometry_msgs</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
@@ -30,9 +28,7 @@
   <build_export_depend>sensor_msgs</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
   <build_export_depend>visualization_msgs</build_export_depend>
-  <build_export_depend>daimon_local_map</build_export_depend>
-  <build_export_depend>daimon_path_search</build_export_depend>
-  <build_export_depend>daimon_traj_planner</build_export_depend>
+  <build_export_depend>frtree_local_map</build_export_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>roscpp</exec_depend>
@@ -40,9 +36,8 @@
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
-  <exec_depend>daimon_local_map</exec_depend>
-  <exec_depend>daimon_path_search</exec_depend>
-  <exec_depend>daimon_traj_planner</exec_depend>
+  <exec_depend>frtree_local_map</exec_depend>
+
 
 
 
