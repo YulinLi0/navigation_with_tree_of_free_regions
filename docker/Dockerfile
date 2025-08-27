@@ -42,6 +42,7 @@ RUN apt-get update && apt-get install -y \
     python3-wstool \
     python3-catkin-tools \
     python3-pip \
+    ros-noetic-map-server \
     && rm -rf /var/lib/apt/lists/*
 
 RUN rosdep init && rosdep update
@@ -54,8 +55,10 @@ ENV PYTHONPATH=/opt/ros/$ROS_DISTRO/lib/python3/dist-packages
 ENV LD_LIBRARY_PATH=/opt/ros/$ROS_DISTRO/lib:$LD_LIBRARY_PATH
 
 
-RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" > /home/${user}/.bashrc \
-    && chown ${user}:${group} /home/${user}/.bashrc
+# RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" > /home/${user}/.bashrc \
+#     && chown ${user}:${group} /home/${user}/.bashrc
+
+# copt
 ENV COPT_HOME=/opt/copt72
 ENV COPT_LICENSE_DIR=/opt/copt72
 ENV PATH=$COPT_HOME/bin:$PATH
