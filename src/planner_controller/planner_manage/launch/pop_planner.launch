@@ -20,5 +20,7 @@
     </node>
     <!-- static transformation between map and odom -->
     <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 100"/>
+    <!-- run rviz -->
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find pop_planner)/rviz/frtree_planner.rviz" />
     
 </launch>   
