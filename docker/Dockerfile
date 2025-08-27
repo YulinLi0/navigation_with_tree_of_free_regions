@@ -22,6 +22,7 @@ RUN apt-get update && apt-get upgrade -y && \
     terminator \
     libnlopt-dev \
     locales && \
+    ros-noetic-map-server \
     locale-gen en_US.UTF-8\
     && rm -rf /var/lib/apt/lists/*
 
