@@ -21,7 +21,7 @@
 #include <decomp_ros_msgs/EllipsoidArray.h>
 #include <decomp_ros_msgs/PolyhedronArray.h>
 
-#include <daimon_planner_manage/dynamic_plan_manager_pop.h>
+#include <frtree_planner_manage/dynamic_plan_manager_pop.h>
 
 #include <Altro/altro_model.h>
 #include <Altro/altro_problem.h>

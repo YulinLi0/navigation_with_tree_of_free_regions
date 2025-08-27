@@ -48,7 +48,6 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/../third_party/geo_utils
   /opt/copt72/include/coptcpp_inc
   /opt/copt72/include
-  ${PROJECT_SOURCE_DIR}/include/da
 )
 
 add_executable(${PROJECT_NAME}_node
