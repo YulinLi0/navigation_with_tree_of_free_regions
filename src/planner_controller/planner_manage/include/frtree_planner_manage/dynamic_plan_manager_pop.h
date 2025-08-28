@@ -44,199 +44,199 @@
 #include "quickhull.hpp"
 #include "sdlp.hpp"
 
-class TimeScaling
-{
-public:
-    // start time and end time of local traj
-    double last_local_start_time_, last_local_end_time_;
-    // start time and end time of global traj
-    double global_start_time_, global_end_time_;
-    // start time and end time of local traj in global frame
-    double start_process_time_, end_process_time_;
-    // time ratio used to convert local time to global time
-    double last_time_ratio_;
-    UniformBspline last_local_traj_, last_local_vel_, last_local_acc_;
-    GlobalData global_traj_;
+// class TimeScaling
+// {
+// public:
+//     // start time and end time of local traj
+//     double last_local_start_time_, last_local_end_time_;
+//     // start time and end time of global traj
+//     double global_start_time_, global_end_time_;
+//     // start time and end time of local traj in global frame
+//     double start_process_time_, end_process_time_;
+//     // time ratio used to convert local time to global time
+//     double last_time_ratio_;
+//     // UniformBspline last_local_traj_, last_local_vel_, last_local_acc_;
+//     GlobalData global_traj_;
 
-    TimeScaling()
-    {
-        is_local_valid_ = false;
-        is_global_valid_ = false;
-    }
+//     TimeScaling()
+//     {
+//         is_local_valid_ = false;
+//         is_global_valid_ = false;
+//     }
 
-    TimeScaling(UniformBspline &local_traj, const double &ts,
-                const double &start_time, const int planning_horizon)
-    {
-        is_local_valid_ = false;
-        is_global_valid_ = false;
-        reset(local_traj, ts, start_time, planning_horizon);
-    }
+//     TimeScaling(UniformBspline &local_traj, const double &ts,
+//                 const double &start_time, const int planning_horizon)
+//     {
+//         is_local_valid_ = false;
+//         is_global_valid_ = false;
+//         reset(local_traj, ts, start_time, planning_horizon);
+//     }
 
-    void setGlobalTraj(GlobalData &global_trajectory)
-    {
-        global_traj_ = global_trajectory;
-        global_start_time_ = global_trajectory.getStartTime();
-        global_end_time_ = global_trajectory.getEndTime();
-        is_local_valid_ = false;
-        is_global_valid_ = true;
-    }
+//     void setGlobalTraj(GlobalData &global_trajectory)
+//     {
+//         global_traj_ = global_trajectory;
+//         global_start_time_ = global_trajectory.getStartTime();
+//         global_end_time_ = global_trajectory.getEndTime();
+//         is_local_valid_ = false;
+//         is_global_valid_ = true;
+//     }
 
-    void getStartAndEndTime(double &start_time, double &end_time)
-    {
-        start_time = start_process_time_;
-        end_time = end_process_time_;
-    }
+//     void getStartAndEndTime(double &start_time, double &end_time)
+//     {
+//         start_time = start_process_time_;
+//         end_time = end_process_time_;
+//     }
 
-    void reset(UniformBspline &local_traj, const double &ts,
-               const double &start_time, const double &end_time)
-    {
-        /*
-         * Note: Reset the TimeScaling, including the last local trajectory,
-         *
-         */
-        is_local_valid_ = true;
-        last_local_traj_ = local_traj;
-        last_local_vel_ = local_traj.getDerivative();
-        last_local_acc_ = last_local_vel_.getDerivative();
-        last_local_traj_.getTimeSpan(last_local_start_time_, last_local_end_time_);
-        last_time_ratio_ = (end_time - start_time) / (last_local_end_time_ - last_local_start_time_);
-        start_process_time_ = start_time;
-        end_process_time_ = end_time; // toGlobalTime(last_local_end_time_);
-    }
+//     void reset(UniformBspline &local_traj, const double &ts,
+//                const double &start_time, const double &end_time)
+//     {
+//         /*
+//          * Note: Reset the TimeScaling, including the last local trajectory,
+//          *
+//          */
+//         is_local_valid_ = true;
+//         last_local_traj_ = local_traj;
+//         last_local_vel_ = local_traj.getDerivative();
+//         last_local_acc_ = last_local_vel_.getDerivative();
+//         last_local_traj_.getTimeSpan(last_local_start_time_, last_local_end_time_);
+//         last_time_ratio_ = (end_time - start_time) / (last_local_end_time_ - last_local_start_time_);
+//         start_process_time_ = start_time;
+//         end_process_time_ = end_time; // toGlobalTime(last_local_end_time_);
+//     }
 
-    bool getTrajInfoFromFused(const double &global_time, Eigen::Vector3d &pos, Eigen::Vector3d &vel,
-                              Eigen::Vector3d &acc, bool is_global = false)
-    /*
-     * Note: Global_time is the time from the start of the global trajectory,
-     *       TimeScaling will help to give the point based on local and global trajectory.
-     *       If the time is out of range, it will return false.
-     *       Otherwise, calculating the point on the local trajectory and return true.
-     */
-    {
-        if (!is_global_valid_)
-        {
-            ROS_ERROR("[TimeScaling]: Global trajectory is not valid!");
-            return false;
-        }
+//     bool getTrajInfoFromFused(const double &global_time, Eigen::Vector3d &pos, Eigen::Vector3d &vel,
+//                               Eigen::Vector3d &acc, bool is_global = false)
+//     /*
+//      * Note: Global_time is the time from the start of the global trajectory,
+//      *       TimeScaling will help to give the point based on local and global trajectory.
+//      *       If the time is out of range, it will return false.
+//      *       Otherwise, calculating the point on the local trajectory and return true.
+//      */
+//     {
+//         if (!is_global_valid_)
+//         {
+//             ROS_ERROR("[TimeScaling]: Global trajectory is not valid!");
+//             return false;
+//         }
 
-        if (!is_local_valid_ || is_global)
-        {
-            pos = global_traj_.getPosition(global_time);
-            vel = global_traj_.getVelocity(global_time);
-            acc = global_traj_.getAcceleration(global_time);
-        }
-        else
-        {
-            if (global_time < end_process_time_ && global_time >= start_process_time_)
-            {
-                double local_time = toLocalTime(global_time);
-                pos = last_local_traj_.evaluateDeBoor(local_time);
-                vel = last_local_vel_.evaluateDeBoor(local_time);
-                acc = last_local_acc_.evaluateDeBoor(local_time);
-            }
-            else
-            {
-                pos = global_traj_.getPosition(global_time);
-                vel = global_traj_.getVelocity(global_time);
-                acc = global_traj_.getAcceleration(global_time);
-            }
-        }
+//         if (!is_local_valid_ || is_global)
+//         {
+//             pos = global_traj_.getPosition(global_time);
+//             vel = global_traj_.getVelocity(global_time);
+//             acc = global_traj_.getAcceleration(global_time);
+//         }
+//         else
+//         {
+//             if (global_time < end_process_time_ && global_time >= start_process_time_)
+//             {
+//                 double local_time = toLocalTime(global_time);
+//                 pos = last_local_traj_.evaluateDeBoor(local_time);
+//                 vel = last_local_vel_.evaluateDeBoor(local_time);
+//                 acc = last_local_acc_.evaluateDeBoor(local_time);
+//             }
+//             else
+//             {
+//                 pos = global_traj_.getPosition(global_time);
+//                 vel = global_traj_.getVelocity(global_time);
+//                 acc = global_traj_.getAcceleration(global_time);
+//             }
+//         }
 
-        return true;
-    }
+//         return true;
+//     }
 
-    bool getTrajInHorizon(double &global_time, const int &horizon_index, double &time_step,
-                          Eigen::Vector3d &pos, Eigen::Vector3d &vel, Eigen::Vector3d &acc)
-    {
-        /*
-         * This will change the global time based on the time ratio
-         */
-        if (!is_global_valid_)
-        {
-            ROS_ERROR("[TimeScaling]: Global trajectory is not valid!");
-            return false;
-        }
+//     bool getTrajInHorizon(double &global_time, const int &horizon_index, double &time_step,
+//                           Eigen::Vector3d &pos, Eigen::Vector3d &vel, Eigen::Vector3d &acc)
+//     {
+//         /*
+//          * This will change the global time based on the time ratio
+//          */
+//         if (!is_global_valid_)
+//         {
+//             ROS_ERROR("[TimeScaling]: Global trajectory is not valid!");
+//             return false;
+//         }
 
-        if (!is_local_valid_)
-        {
-            global_time += horizon_index * time_step;
-            pos = global_traj_.getPosition(global_time);
-            vel = global_traj_.getVelocity(global_time);
-            acc = global_traj_.getAcceleration(global_time);
-        }
-        else
-        {
-            double local_time = toLocalTime(global_time);
-            // std::cout << global_time << " " << start_process_time_ << " " << end_process_time_ << std::endl;
-            if (local_time != -1)
-            {
-                local_time += horizon_index * time_step;
-                if (local_time < last_local_end_time_ && local_time >= last_local_start_time_)
-                {
-                    global_time += horizon_index * time_step * last_time_ratio_;
-                    pos = last_local_traj_.evaluateDeBoor(local_time);
-                    vel = last_local_vel_.evaluateDeBoor(local_time);
-                    acc = last_local_acc_.evaluateDeBoor(local_time);
-                    return true;
-                }
-            }
-            global_time += horizon_index * time_step;
-            pos = global_traj_.getPosition(global_time);
-            vel = global_traj_.getVelocity(global_time);
-            acc = global_traj_.getAcceleration(global_time);
-            if (horizon_index == 0 && global_time >= start_process_time_)
-                is_local_valid_ = false;
-        }
-        return true;
-    }
+//         if (!is_local_valid_)
+//         {
+//             global_time += horizon_index * time_step;
+//             pos = global_traj_.getPosition(global_time);
+//             vel = global_traj_.getVelocity(global_time);
+//             acc = global_traj_.getAcceleration(global_time);
+//         }
+//         else
+//         {
+//             double local_time = toLocalTime(global_time);
+//             // std::cout << global_time << " " << start_process_time_ << " " << end_process_time_ << std::endl;
+//             if (local_time != -1)
+//             {
+//                 local_time += horizon_index * time_step;
+//                 if (local_time < last_local_end_time_ && local_time >= last_local_start_time_)
+//                 {
+//                     global_time += horizon_index * time_step * last_time_ratio_;
+//                     pos = last_local_traj_.evaluateDeBoor(local_time);
+//                     vel = last_local_vel_.evaluateDeBoor(local_time);
+//                     acc = last_local_acc_.evaluateDeBoor(local_time);
+//                     return true;
+//                 }
+//             }
+//             global_time += horizon_index * time_step;
+//             pos = global_traj_.getPosition(global_time);
+//             vel = global_traj_.getVelocity(global_time);
+//             acc = global_traj_.getAcceleration(global_time);
+//             if (horizon_index == 0 && global_time >= start_process_time_)
+//                 is_local_valid_ = false;
+//         }
+//         return true;
+//     }
 
-    bool getTrajInfoFromGlobal(const double &global_time, Eigen::Vector3d &pos, Eigen::Vector3d &vel,
-                               Eigen::Vector3d &acc)
-    {
-        if (!is_global_valid_)
-        {
-            ROS_ERROR("[TimeScaling]: Global trajectory is not valid!");
-            return false;
-        }
-        pos = global_traj_.getPosition(global_time);
-        vel = global_traj_.getVelocity(global_time);
-        acc = global_traj_.getAcceleration(global_time);
-        return true;
-    }
+//     bool getTrajInfoFromGlobal(const double &global_time, Eigen::Vector3d &pos, Eigen::Vector3d &vel,
+//                                Eigen::Vector3d &acc)
+//     {
+//         if (!is_global_valid_)
+//         {
+//             ROS_ERROR("[TimeScaling]: Global trajectory is not valid!");
+//             return false;
+//         }
+//         pos = global_traj_.getPosition(global_time);
+//         vel = global_traj_.getVelocity(global_time);
+//         acc = global_traj_.getAcceleration(global_time);
+//         return true;
+//     }
 
-    bool getTrajInfoFromLocal(const double &local_time, Eigen::Vector3d &pos, Eigen::Vector3d &vel, Eigen::Vector3d &acc)
-    {
-        double g_time = toGlobalTime(local_time);
-        return getTrajInfoFromFused(g_time, pos, vel, acc);
-    }
+//     bool getTrajInfoFromLocal(const double &local_time, Eigen::Vector3d &pos, Eigen::Vector3d &vel, Eigen::Vector3d &acc)
+//     {
+//         double g_time = toGlobalTime(local_time);
+//         return getTrajInfoFromFused(g_time, pos, vel, acc);
+//     }
 
-    double toLocalTime(const double &global_time)
-    {
-        if (global_time <= end_process_time_ && global_time >= start_process_time_)
-            return (global_time - start_process_time_) / last_time_ratio_ + last_local_start_time_;
-        else
-            return -1;
-    }
+//     double toLocalTime(const double &global_time)
+//     {
+//         if (global_time <= end_process_time_ && global_time >= start_process_time_)
+//             return (global_time - start_process_time_) / last_time_ratio_ + last_local_start_time_;
+//         else
+//             return -1;
+//     }
 
-    double toGlobalTime(const double &local_time)
-    {
-        if (local_time <= last_local_end_time_)
-            return (local_time - last_local_start_time_) * last_time_ratio_ + start_process_time_;
-        else
-            return -1;
-    }
+//     double toGlobalTime(const double &local_time)
+//     {
+//         if (local_time <= last_local_end_time_)
+//             return (local_time - last_local_start_time_) * last_time_ratio_ + start_process_time_;
+//         else
+//             return -1;
+//     }
 
-    UniformBspline getLocalTraj() { return last_local_traj_; }
+//     UniformBspline getLocalTraj() { return last_local_traj_; }
 
-    bool checkLocalValid()
-    {
-        return is_local_valid_;
-    }
+//     bool checkLocalValid()
+//     {
+//         return is_local_valid_;
+//     }
 
-private:
-    bool is_local_valid_ = false;
-    bool is_global_valid_ = false;
-};
+// private:
+//     bool is_local_valid_ = false;
+//     bool is_global_valid_ = false;
+// };
 
 class DynamicPlanManagerPOP
 {
@@ -260,7 +260,7 @@ public:
 
     GlobalData global_data_;
     LocalTrajData local_traj_data_;
-    TimeScaling local_time_scaling_;
+    // TimeScaling local_time_scaling_;
     // dynamic obstacle info
     std::string str_dynamic_obs_;
     // ros publisher
@@ -284,7 +284,7 @@ public:
     // global path when first get the goal
     bool planGlobalPath(GraphNode *node, Eigen::Vector3d &start_pos, Eigen::Vector3d &end_pos);
 
-    bool optimizeLocalTraj(double ts, std::vector<Eigen::Vector3d> point_set, std::vector<Eigen::Vector3d> start_end_derivatives, UniformBspline &bspline_traj);
+    // bool optimizeLocalTraj(double ts, std::vector<Eigen::Vector3d> point_set, std::vector<Eigen::Vector3d> start_end_derivatives, UniformBspline &bspline_traj);
 
     // bool ReplanLocalTraj(const int &start_collision_index, 
 									//    const Eigen::Vector3d &odom_pos);

@@ -50,8 +50,6 @@ Navigate from different start to goal in 3D Environment.
 </p>
 
 ## Usage
-
-
 ``local_map``manage the update of the tree; 
 
 ``planner_manage`` has a FSM to manage the pipeline of the framework (including the intermediate goal selecting and dynamic obstacle detection); 
@@ -63,7 +61,7 @@ A detailed matlab demo for constructing/solving the SOS programming as well as e
 ### Step 1: build the planner.
 You need to :
 - install the conic programming solver [COPT](https://guide.coap.online/copt/en-doc/intro.html) and get a license.
-- install the numerical optimization library [ALTRO](https://github.com/RoboticExplorationLab/ALTRO)
+- install the numerical optimization library [ALTRO](https://github.com/RoboticExplorationLab/ALTRO) to system using default path.
 - sudo apt install whatever you miss in your system.
 
 Then you can build the catkin workspace with:
@@ -84,7 +82,34 @@ Then you can run the planner with:
 ```sh
 roslaunch pop_planner pop_planner.launch
 ```
+## Docker:
+I put the docker file I tested at ``./docker/`` with a proper handling of copt (require consistence between license name with the machine user name), ros, and graphic rendering.
+```sh
+# Under the docker file folder
+docker build -t "your_image_name" .
+```
 
+Install the [Nvidia Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) first. Then an example command to run the container from your image is provided here:
+```sh
+xhost +
+
+docker run --gpus all -it
+-e DISPLAY=$DISPLAY
+-e QT_X11_NO_MITSHM=1
+-v /tmp/.X11-unix:/tmp/.X11-unix:rw
+--name frtree
+your_image_name
+```
+After enter your container, test if gazebo is rendering using GPU on your local machine.
+
+Then, you need to install ALTRO in your container , and then install the planner:
+```sh
+git clone "https://github.com/YulinLi0/navigation_with_tree_of_free_regions.git"
+## cd the workspace and run:
+catkin build pop_planner
+## then launch the planner after you have those required input topics
+roslaunch pop_planner pop_planner.launch
+```
 
 
 

@@ -80,19 +80,21 @@ RUN sudo usermod -a -G video ${user}
 COPY copt72 /opt/copt72
 WORKDIR ${home}
 
-# install ALTRO
-RUN git clone https://github.com/bjack205/altro \
-    && cd altro \
-    && mkdir build && cd build \
-    && cmake -D BUILD_SHARED_LIBS=ON ..\
-    && cmake --build . -j4 \
-    && sudo cmake --install .
+CMD ["terminator"]
 
-# install frtree planner
-RUN https://github.com/YulinLi0/navigation_with_tree_of_free_regions.git \
-    && cd navigation_with_tree_of_free_regions \
-    && catkin build pop_planner \
-    && source devel/setup.bash
+# install ALTRO
+# RUN git clone https://github.com/bjack205/altro \
+#     && cd altro \
+#     && mkdir build && cd build \
+#     && cmake -D BUILD_SHARED_LIBS=ON ..\
+#     && cmake --build . -j4 \
+#     && sudo cmake --install .
+
+# # install frtree planner
+# RUN https://github.com/YulinLi0/navigation_with_tree_of_free_regions.git \
+#     && cd navigation_with_tree_of_free_regions \
+#     && catkin build pop_planner \
+#     && source devel/setup.bash
 
 # !set up your robot, sensor, and launch the planner
 # roslaunch pop_planner pop_planner.launch
@@ -100,7 +102,6 @@ RUN https://github.com/YulinLi0/navigation_with_tree_of_free_regions.git \
 
 # and open shell
 # CMD ["/bin/bash"]
-CMD ["terminator"]
 
 
 

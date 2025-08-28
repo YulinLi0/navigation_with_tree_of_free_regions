@@ -16,32 +16,32 @@ private:
     double dur_time_          = 0.0;
     double last_process_time_ = 0.0;            // use to calculate local traj
 
-    void discretePath()
-    /*
-     * @brief: regenerate landmarks from global path
-     */
-    {
-        global_path_.clear();
-        double delta_t = 0.01;
+    // void discretePath()
+    // /*
+    //  * @brief: regenerate landmarks from global path
+    //  */
+    // {
+    //     global_path_.clear();
+    //     double delta_t = 0.01;
 
-        // init id
-        int id = 0;
+    //     // init id
+    //     int id = 0;
 
-        // check from start to end
-        for (double t = tm_start_ + delta_t; t < tm_end_; t += delta_t)
-        {
-            // add to global path
-            Eigen::Vector3d pos_t = getPosition(t);
-            global_path_.push_back(pos_t);
-        }
+    //     // check from start to end
+    //     for (double t = tm_start_ + delta_t; t < tm_end_; t += delta_t)
+    //     {
+    //         // add to global path
+    //         Eigen::Vector3d pos_t = getPosition(t);
+    //         global_path_.push_back(pos_t);
+    //     }
 
-        // add end_pos to global path
-        global_path_.push_back(end_pos_);
-    }
+    //     // add end_pos to global path
+    //     global_path_.push_back(end_pos_);
+    // }
 
 
 public:
-    UniformBspline pos_traj_, vel_traj_, acc_traj_;
+    // UniformBspline pos_traj_, vel_traj_, acc_traj_;
     double tm_start_, tm_end_;
     double end_roll_, end_pitch_, end_yaw_;
     Eigen::Vector3d start_pos_, end_pos_;
@@ -73,10 +73,10 @@ public:
         }
     }
 
-    Eigen::Vector3d getPosition(double t)
-    {
-        return pos_traj_.evaluateDeBoor(t);
-    }
+    // Eigen::Vector3d getPosition(double t)
+    // {
+    //     return pos_traj_.evaluateDeBoor(t);
+    // }
 
 void getGoalRPY(double &roll, double &pitch, double &yaw){
     roll = end_roll_;
@@ -90,15 +90,15 @@ void getGoalRPY(double &roll, double &pitch, double &yaw){
         end_yaw_ = yaw;
     }
 
-    Eigen::Vector3d getVelocity(double t)
-    {
-        return vel_traj_.evaluateDeBoor(t);
-    }
+    // Eigen::Vector3d getVelocity(double t)
+    // {
+    //     return vel_traj_.evaluateDeBoor(t);
+    // }
 
-    Eigen::Vector3d getAcceleration(double t)
-    {
-        return acc_traj_.evaluateDeBoor(t);
-    }
+    // Eigen::Vector3d getAcceleration(double t)
+    // {
+    //     return acc_traj_.evaluateDeBoor(t);
+    // }
 
     // double calculateCurveRadius(Eigen::Vector2d vel, Eigen::Vector2d acc)
     // {
@@ -113,24 +113,24 @@ void getGoalRPY(double &roll, double &pitch, double &yaw){
     //     return w;
     // }
 
-    void resetData(const UniformBspline &pos_traj)
-    {
-        pos_traj_ = pos_traj;
-        vel_traj_ = pos_traj_.getDerivative();
-        acc_traj_ = vel_traj_.getDerivative();
+    // void resetData(const UniformBspline &pos_traj)
+    // {
+    //     pos_traj_ = pos_traj;
+    //     vel_traj_ = pos_traj_.getDerivative();
+    //     acc_traj_ = vel_traj_.getDerivative();
 
-        // assign timespan to tm_start_ & tm_end_
-        pos_traj_.getTimeSpan(tm_start_, tm_end_);
-        dur_time_ = tm_end_ - tm_start_;
+    //     // assign timespan to tm_start_ & tm_end_
+    //     pos_traj_.getTimeSpan(tm_start_, tm_end_);
+    //     dur_time_ = tm_end_ - tm_start_;
 
-        // get start & end points
-        last_process_time_ = start_time_ = tm_start_;
-        start_pos_ = getPosition(tm_start_);
-        end_pos_ = getPosition(tm_end_);
+    //     // get start & end points
+    //     last_process_time_ = start_time_ = tm_start_;
+    //     start_pos_ = getPosition(tm_start_);
+    //     end_pos_ = getPosition(tm_end_);
 
-        // reset landmarks according to pos_traj
-        discretePath();
-    }
+    //     // reset landmarks according to pos_traj
+    //     discretePath();
+    // }
 
     double getStartTime()
     {
@@ -162,19 +162,19 @@ void getGoalRPY(double &roll, double &pitch, double &yaw){
         return global_path_;
     }
 
-    std::vector<Eigen::Vector3d> getControlPoints()
-    {
-        Eigen::MatrixXd control_pts_matrix = pos_traj_.get_control_points(); // (dim,cols)
+    // std::vector<Eigen::Vector3d> getControlPoints()
+    // {
+    //     Eigen::MatrixXd control_pts_matrix = pos_traj_.get_control_points(); // (dim,cols)
 
-        std::vector<Eigen::Vector3d> ctrl_pts;
-        ctrl_pts.clear();
-        for (int i = 0; i < control_pts_matrix.cols(); i++)
-        {
-            ctrl_pts.push_back(control_pts_matrix.col(i));
-        }
+    //     std::vector<Eigen::Vector3d> ctrl_pts;
+    //     ctrl_pts.clear();
+    //     for (int i = 0; i < control_pts_matrix.cols(); i++)
+    //     {
+    //         ctrl_pts.push_back(control_pts_matrix.col(i));
+    //     }
 
-        return ctrl_pts;
-    }
+    //     return ctrl_pts;
+    // }
 };
 
 struct LocalTrajData
