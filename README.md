@@ -71,17 +71,47 @@ source devel/setup.bash
 ```
 
 ### Step 2 Start the planner
-the planner takes three input topics:
+1. the planner takes three input topics:
 - ``/odom`` (odometry information of your robot)
 - ``/velodyne_points`` (the raw point cloud data)
 - ``/move_base_simple/goal`` (2D navigation goal in rviz)
 
-and output directly the ``/cmd_vel`` which is a ``geometry_msgs::Twist`` message. You need to take care of your robot model and the sensor topics.
+and output directly the ``/cmd_vel`` which is a ``geometry_msgs::Twist`` message for a full-directional mobile robot. You need to take care of your robot model and the sensor topics.
+
+2. make sure you have proper tf relationship between ``base`` frame and your sensor (lidar) frame, then change the name of sensor frame to your own in ``dynamic_manager_pop.cpp``
+
+```cpp
+// !! change the lidar link name according to your robot
+node.param("plan_manager/lidar_link_name", pp_.lidar_link_name_, std::string("velodyne_link"));
+```
+
+3. adjust your robot shape
+- change the shortest edge length to your own in ``dynamic_manager_pop.cpp``
+```cpp
+// !! change the shortest edge length according to your robot size
+node_.param("plan_manager/shortest_edge_length_robot", pp_.shortest_edge_length_robot_, 0.32);
+```
+- change the hyperplane representation Ax <= b for backend optimization in ``altro_problem.cpp``
+```cpp
+A[0] = Eigen::MatrixXd::Zero(6, 3);
+b[0] = Eigen::VectorXd::Zero(6);
+// change your robot shape here Ax <= b
+A[0]  << 1, 0  , 0,
+        -1, 0  , 0,
+            0, 1  , 0,
+            0, -1 , 0,
+            0, 0  , 1,
+            0, 0  , -1;
+b[0] << 0.38, 0.42, 0.22, 0.22, 0.10, 0.10;
+```
+
+
 
 Then you can run the planner with:
 ```sh
 roslaunch pop_planner pop_planner.launch
 ```
+and you can adjust the weighting matrix Q and R in the objective function in ``altro_problem.cpp`` in your case.
 ## Docker:
 I put the docker file I tested at ``./docker/`` with a proper handling of copt (require consistence between license name with the machine user name), ros, and graphic rendering.
 ```sh

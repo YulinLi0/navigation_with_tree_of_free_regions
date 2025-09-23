@@ -4,6 +4,7 @@
 #include <Eigen/Eigen>
 #include <ros/ros.h>
 #include <vector>
+#include <string>
 
 const double PI = 3.14159265358979323846;
 
@@ -291,6 +292,8 @@ struct PlanParameters
     double max_vel_, max_acc_, max_jerk_; // physical limits
     double ctrl_pt_dist_;                 // distance between adjacient B-spline control points
     double global_pt_dist_;               // distance between adjacient global path points
+    double shortest_edge_length_robot_; // shortest edge length of the robot
+    string lidar_link_name_;          // name of the lidar link
     // double time_resolution_;                // for select smaple from timed_astar path
 
     double feasibility_tolerance_; // permitted ratio of vel/acc exceeding limits

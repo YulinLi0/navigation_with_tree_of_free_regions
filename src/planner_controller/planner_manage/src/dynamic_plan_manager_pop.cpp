@@ -17,6 +17,10 @@ void DynamicPlanManagerPOP::initPlanModules(ros::NodeHandle &nh)
 	node_.param("plan_manager/global_points_distance", pp_.global_pt_dist_, 0.05);
 	node_.param("plan_manager/use_distinctive_trajs", pp_.use_distinctive_trajs_, true);
 	node_.param("plan_manager/local_time_horizon", pp_.local_time_horizon_, 2.0);
+	// !! change the shortest edge length according to your robot size
+	node_.param("plan_manager/shortest_edge_length_robot", pp_.shortest_edge_length_robot_, 0.32);
+	// !! change the lidar link name according to your robot
+	node.param("plan_manager/lidar_link_name", pp_.lidar_link_name_, std::string("velodyne_link"));
 	pub_global_traj_ = node_.advertise<visualization_msgs::Marker>("global_raw_traj", 10);
 	pub_local_traj_ = node_.advertise<visualization_msgs::Marker>("local_raw_traj", 10);
 	pub_local_traj_opt_ = node_.advertise<visualization_msgs::Marker>("local_opt_traj", 10);
@@ -39,7 +43,7 @@ void DynamicPlanManagerPOP::initPlanModules(ros::NodeHandle &nh)
 	tf2_ros::Buffer tfBuffer_velodyne;
 	tf2_ros::TransformListener tfListener_velodyne(tfBuffer_velodyne);
 	try{
-		*(velodyne_to_base_ptr_) = tfBuffer_velodyne.lookupTransform("unitree_scan", "base", ros::Time::now(), ros::Duration(2.0));
+		*(velodyne_to_base_ptr_) = tfBuffer_velodyne.lookupTransform(pp_.lidar_link_name_, "base", ros::Time::now(), ros::Duration(2.0));
 	}
     catch (tf2::TransformException &ex)
     {
@@ -811,7 +815,6 @@ for (int i = 0; i < vertices_test.size(); i++){
 
 bool DynamicPlanManagerPOP::ifCanPassThroughShortestLine(Polyhedron3D &poly1, Polyhedron3D &poly2, Eigen::Vector3d odom){
 	// add a hyperplane to the given two polyhedrons
-std::cout << "in ifCanPassThroughShortestLine" << std::endl;
 	auto vs1 = poly1.hyperplanes();
 	auto vs2 = poly2.hyperplanes();
 	int poly1_num_facets = vs1.size();
@@ -837,20 +840,19 @@ std::cout << "in ifCanPassThroughShortestLine" << std::endl;
 		hPoly1.row(j) << A1.row(j), -b1(j);
 		hPoly_intersect_.row(j) << A1.row(j), -b1(j);
 	}
-	hPoly1.row(poly1_num_facets) << 0, 0, 1, -0.25;
+	hPoly1.row(poly1_num_facets) << 0, 0, 1, -odom[2]
 	for (int j = 0; j < poly2_num_facets; ++j)
 	{
 		hPoly2.row(j) << A2.row(j), -b2(j);
 		hPoly_intersect_.row(j + poly1_num_facets) << A2.row(j), -b2(j);
 	}
-	hPoly2.row(poly2_num_facets) << 0, 0, 1, -0.25;
-	hPoly_intersect_.row(poly1_num_facets + poly2_num_facets) << 0, 0, 1, -0.25;
-std::cout << "Prepare to enumerateVs" << std::endl;
+	hPoly2.row(poly2_num_facets) << 0, 0, 1, -odom[2];
+	hPoly_intersect_.row(poly1_num_facets + poly2_num_facets) << 0, 0, 1, -odom[2];
 	bool flag1 = false;
 	flag1 = geo_utils::enumerateVs(hPoly1, vPoly1);
 	flag1 = geo_utils::enumerateVs(hPoly2, vPoly2);
 	flag1 = geo_utils::enumerateVs(hPoly_intersect_, vPoly_intersect_);
-std::cout << "if Vpoly successfully got: " << flag1 << std::endl;
+
 
 // std::cout << "vPoly_intersect_ size: " << vPoly_intersect_.cols() << std::endl;
 // for (int i = 0; i < vPoly_intersect_.cols(); i++){
@@ -865,32 +867,32 @@ std::cout << "if Vpoly successfully got: " << flag1 << std::endl;
 	std::vector<Eigen::Vector3d> vPoly1_at_robot_height;
 	std::vector<Eigen::Vector3d> vPoly2_at_robot_height;
 	for (int i = 0; i < vPoly_intersect_.cols(); i++){
-		if (vPoly_intersect_.col(i)(2) < 0.25 + 0.00001 && vPoly_intersect_.col(i)(2) > 0.25 - 0.00001){
+		if (vPoly_intersect_.col(i)(2) < odom[2] + 0.00001 && vPoly_intersect_.col(i)(2) > odom[2] - 0.00001){
 			vPoly_intersect_at_robot_height.push_back(vPoly_intersect_.col(i));
 		}
 	}
 	for (int i = 0; i < vPoly1.cols(); i++){
-		if (vPoly1.col(i)(2) < 0.25 + 0.00001 && vPoly1.col(i)(2) > 0.25 - 0.00001){
+		if (vPoly1.col(i)(2) < odom[2] + 0.00001 && vPoly1.col(i)(2) > odom[2] - 0.00001){
 			vPoly1_at_robot_height.push_back(vPoly1.col(i));
 		}
 	}
 	for (int i = 0; i < vPoly2.cols(); i++){
-		if (vPoly2.col(i)(2) < 0.25 + 0.00001 && vPoly2.col(i)(2) > 0.25 - 0.00001){
+		if (vPoly2.col(i)(2) < odom[2] + 0.00001 && vPoly2.col(i)(2) > odom[2] - 0.00001){
 			vPoly2_at_robot_height.push_back(vPoly2.col(i));
 		}
 	}
-std::cout << "vPoly_intersect_at_robot_height size: " << vPoly_intersect_at_robot_height.size() << std::endl;
-for ( int i = 0; i < vPoly_intersect_at_robot_height.size(); i++){
-	std::cout << vPoly_intersect_at_robot_height[i].transpose() << std::endl;
-}
-std::cout << "vPoly1_at_robot_height size: " << vPoly1_at_robot_height.size() << std::endl;
-for ( int i = 0; i < vPoly1_at_robot_height.size(); i++){
-	std::cout << vPoly1_at_robot_height[i].transpose() << std::endl;
-}
-std::cout << "vPoly2_at_robot_height size: " << vPoly2_at_robot_height.size() << std::endl;
-for ( int i = 0; i < vPoly2_at_robot_height.size(); i++){
-	std::cout << vPoly2_at_robot_height[i].transpose() << std::endl;
-}
+	// std::cout << "vPoly_intersect_at_robot_height size: " << vPoly_intersect_at_robot_height.size() << std::endl;
+	for ( int i = 0; i < vPoly_intersect_at_robot_height.size(); i++){
+		std::cout << vPoly_intersect_at_robot_height[i].transpose() << std::endl;
+	}
+	// std::cout << "vPoly1_at_robot_height size: " << vPoly1_at_robot_height.size() << std::endl;
+	for ( int i = 0; i < vPoly1_at_robot_height.size(); i++){
+		std::cout << vPoly1_at_robot_height[i].transpose() << std::endl;
+	}
+	// std::cout << "vPoly2_at_robot_height size: " << vPoly2_at_robot_height.size() << std::endl;
+	for ( int i = 0; i < vPoly2_at_robot_height.size(); i++){
+		std::cout << vPoly2_at_robot_height[i].transpose() << std::endl;
+	}
 
 	std::vector<Eigen::Vector3d> vPoly_final_list;
 	// among the vertices of vPoly_intersect_, find the vertices that are exactly on the boundary of poly1 and poly2
@@ -922,12 +924,12 @@ for ( int i = 0; i < vPoly2_at_robot_height.size(); i++){
 			vPoly_final_list.push_back(vPoly_intersect_at_robot_height[i]);
 		}
 	}
-std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! show vPoly_final_list" << std::endl;
-std::cout << "vPoly_final_list size: " << vPoly_final_list.size() << std::endl;
-for (int i = 0; i < vPoly_final_list.size(); i++){
-	std::cout << vPoly_final_list[i].transpose() << std::endl;
-}
-	// base on the points from vPoly_final_list, find the closet point that the line generate from them will seperate the start_point and end_point
+	// std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! show vPoly_final_list" << std::endl;
+	// std::cout << "vPoly_final_list size: " << vPoly_final_list.size() << std::endl;
+	for (int i = 0; i < vPoly_final_list.size(); i++){
+		std::cout << vPoly_final_list[i].transpose() << std::endl;
+	}
+	// from vPoly_final_list, find a pair of closest vertices that the line segment generated from them can seperate the line segment connecting start_point and end_point
 	Eigen::Vector3d start_point, end_point;
 	Eigen::Vector3d points1, points2;
 	points1 << 0, 0, 0;
@@ -952,11 +954,11 @@ for (int i = 0; i < vPoly_final_list.size(); i++){
 
 	points_for_test_1.push_back(points1);
 	points_for_test_1.push_back(points2);
-std::cout << points1.transpose() << std::endl;
-std::cout << points2.transpose() << std::endl;
-std::cout << "min_distance: " << min_distance << std::endl;
+	// std::cout << points1.transpose() << std::endl;
+	// std::cout << points2.transpose() << std::endl;
+	// std::cout << "min_distance: " << min_distance << std::endl;
 	// set 0.32m as the shortest edge of the robot
-	if (min_distance > 0.32 && min_distance < 20){
+	if (min_distance > pp_.shortest_edge_length_robot_ && min_distance < 20){
 		return true;
 	}
 	else{
@@ -969,7 +971,6 @@ bool DynamicPlanManagerPOP::checkIfNewPolyhedronNeeded(Eigen::Vector3d center, s
 	// if not, generate a new polyhedron at the center of the intersection polyhedron
 	// the threshold is set to be the volume of robot times 2
 	// robot is considered as a box with size 0.6m * 0.3m * 0.3m
-std::cout << "in checkIfNewPolyhedronNeeded" << std::endl;
 	double threshold = 0.8 * 0.4 * 0.3 * 6;
 	double volume_sum = 0.0;
 	for (int i = 0; i < vertices_for_each_surfaces.size(); i++){
@@ -1020,20 +1021,19 @@ std::cout << "in checkIfNewPolyhedronNeeded" << std::endl;
 	// double average_distance = 0.0;
 	// double dist_sum = 0.0;
 	// average_distance = dist_sum / vPol.cols();
-std::cout << "volume_sum: " << volume_sum << std::endl;
-	if (volume_sum > threshold){
-		// no need for more polyhedrons
-		return false;
+	// std::cout << "volume_sum: " << volume_sum << std::endl;
+		if (volume_sum > threshold){
+			// no need for more polyhedrons
+			return false;
+		}
+		else{
+			// generate one more polyhedron at the center of the intersection polyhedron
+	// std::cout << "need new polyhedron" << std::endl;
+			return true;
+		}
 	}
-	else{
-		// generate one more polyhedron at the center of the intersection polyhedron
-std::cout << "need new polyhedron" << std::endl;
-		return true;
-	}
-}
 
 void DynamicPlanManagerPOP::generatePolyhedronAtIntersection(vec_E<Polyhedron3D> &polys_, GraphNode *node, std::vector<double> &cost_to_goal_sorted){
-std::cout << "in generatePolyhedronAtIntersection" << std::endl;
 	std::vector<vec_E<Polyhedron3D>> polys_after_generation_;
 	int sequence_of_polys;
 	if(polys_.size() % 3 == 0){
@@ -1043,7 +1043,6 @@ std::cout << "in generatePolyhedronAtIntersection" << std::endl;
 		sequence_of_polys = (polys_.size()+1) / 3;
 	}
 	polys_after_generation_.resize(sequence_of_polys);
-std::cout << "size of polys_: " << polys_.size() << std::endl;
 
 	for (unsigned int i = 0; i < sequence_of_polys; ++i){
 		// if need to generate a new polyhedron, estimateIntersectionVolume will return a new polyhedron, else return nothing
@@ -1053,7 +1052,7 @@ std::cout << "size of polys_: " << polys_.size() << std::endl;
 		if(3*i+2 < polys_.size())
 			polys_after_generation_[i].push_back(polys_[3*i+2]);
 	}
-std::cout << "size of polys_after_generation_: " << polys_after_generation_.size() << std::endl;
+// std::cout << "size of polys_after_generation_: " << polys_after_generation_.size() << std::endl;
 	Eigen::Vector3d robot_pos_velodyne(0,0,0);
 	const Eigen::Affine3d T_velodyne_base = tf2::transformToEigen(*(velodyne_to_base_ptr_));
     const Eigen::Matrix4f T_velodyne_base_matrix = T_velodyne_base.matrix().cast<float>();
@@ -1066,9 +1065,8 @@ std::cout << "size of polys_after_generation_: " << polys_after_generation_.size
 	bool dead_end = false;
 	Eigen::Vector3d start_pos = node->replan_pos_;
 	for (unsigned int i = 0; i < sequence_of_polys ; ++i){
-std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!i: " << i << std::endl;
+	// std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!i: " << i << std::endl;
 		dead_end = !ifCanPassThroughShortestLine(polys_after_generation_[i][0], polys_after_generation_[i][1], robot_pos_odom);
-std::cout << "dead_end: " << dead_end << std::endl;
 		if(!dead_end){
 			// compare the leading ray of the polyhedron with the direction from the start point to the end point
 			Eigen::Vector3d end_pos = polys_after_generation_[i][1].vertices_.rowwise().mean();
@@ -1078,15 +1076,15 @@ std::cout << "dead_end: " << dead_end << std::endl;
 			Eigen::Vector3d leading_ray_unit_xy, node_leading_ray_unit_xy;
 			leading_ray_unit_xy << leading_ray_unit(0), leading_ray_unit(1), 0;
 			node_leading_ray_unit_xy << node->leading_ray_.normalized()(0), node->leading_ray_.normalized()(1), 0;
-std::cout << "start_pos: " << start_pos.transpose() << std::endl;
-std::cout << "end_pos: " << end_pos.transpose() << std::endl;
+			// std::cout << "start_pos: " << start_pos.transpose() << std::endl;
+			// std::cout << "end_pos: " << end_pos.transpose() << std::endl;
 // if(!node->root){
 // std::cout << "parent node leading ray start pos: " << node->polys_[0].vertices_.rowwise().mean().transpose() << std::endl;
 // std::cout << "parent node leading ray end pos: " << node->polys_[1].vertices_.rowwise().mean().transpose() << std::endl;
 // }
-std::cout << "leading_ray_unit: " << leading_ray_unit_xy.transpose() << std::endl;
-std::cout << "node_leading_ray_unit: " << node_leading_ray_unit_xy.transpose() << std::endl;
-std::cout << "two rays' direction: " << leading_ray_unit_xy.dot(node_leading_ray_unit_xy) << std::endl;
+			// std::cout << "leading_ray_unit: " << leading_ray_unit_xy.transpose() << std::endl;
+			// std::cout << "node_leading_ray_unit: " << node_leading_ray_unit_xy.transpose() << std::endl;
+			// std::cout << "two rays' direction: " << leading_ray_unit_xy.dot(node_leading_ray_unit_xy) << std::endl;
 			if (node->root){
 				GraphNode *new_node = new GraphNode();
 				Eigen::Vector3d replan_pts = polys_after_generation_[i][1].vertices_.rowwise().mean();
@@ -1097,17 +1095,17 @@ std::cout << "two rays' direction: " << leading_ray_unit_xy.dot(node_leading_ray
 				new_node->leading_ray_ = end_pos - start_pos;	// the leading ray is the direction from the start point to the end point
 
 				bool too_close = false;
-std::cout << "size of child nodes: " << node->child_.size() << std::endl;
+				// std::cout << "size of child nodes: " << node->child_.size() << std::endl;
 				for ( int n = 0; n < node->child_.size(); n++){
 					// check leading_ray with existing child nodes, if too close do not add
 					Eigen::Vector3d child_leading_ray_unit_xy;
 					child_leading_ray_unit_xy << node->child_[n]->leading_ray_.normalized()(0), node->child_[n]->leading_ray_.normalized()(1), 0;
 					Eigen::Vector3d new_node_leading_ray_unit_xy;
 					new_node_leading_ray_unit_xy << new_node->leading_ray_.normalized()(0), new_node->leading_ray_.normalized()(1), 0;
-std::cout << "child leading ray: " << child_leading_ray_unit_xy.transpose() << std::endl;
-std::cout << "new node leading ray: " << new_node_leading_ray_unit_xy.transpose() << std::endl;
+					// std::cout << "child leading ray: " << child_leading_ray_unit_xy.transpose() << std::endl;
+					// std::cout << "new node leading ray: " << new_node_leading_ray_unit_xy.transpose() << std::endl;
 					// get the angle between the leading_ray and the leading_ray of the child node
-std::cout << "cos of two rays: " << new_node_leading_ray_unit_xy.dot(child_leading_ray_unit_xy) << std::endl;
+					// std::cout << "cos of two rays: " << new_node_leading_ray_unit_xy.dot(child_leading_ray_unit_xy) << std::endl;
 					if (new_node_leading_ray_unit_xy.dot(child_leading_ray_unit_xy) > 0.75){
 						too_close = true;
 						break;
@@ -1117,10 +1115,10 @@ std::cout << "cos of two rays: " << new_node_leading_ray_unit_xy.dot(child_leadi
 				if (!too_close){
 					new_node->parent_ = node;
 					getCenterListForNode(new_node);
-std::cout << "dist to travel: " << (new_node->center_list_[2] - new_node->center_list_[0]).norm() << std::endl;
+// std::cout << "dist to travel: " << (new_node->center_list_[2] - new_node->center_list_[0]).norm() << std::endl;
 					if((new_node->center_list_[2] - new_node->center_list_[0]).norm() > 0.049){
 						node->child_.push_back(new_node);
-std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! node added" << std::endl;
+// std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! node added" << std::endl;
 						}
 				}
 
@@ -1128,7 +1126,7 @@ std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! node added" << std
 			// compare the yaw angle between the leading_ray_unit and the leading_ray of the parent node
 			// if those two vector is almost parallel, do not add the node
 			else if (leading_ray_unit_xy.dot(node_leading_ray_unit_xy) > -0.71 && !backtrackFlag_){
-std::cout << " trying to add node " << std::endl;
+// std::cout << " trying to add node " << std::endl;
 				bool if_in_dead_polys = false;
 				bool if_in_visited_polys = false;
 				for (int j = 0; j < polys_deadend_.size(); j++){
@@ -1143,8 +1141,8 @@ std::cout << " trying to add node " << std::endl;
 						break;
 					}
 				}
-std::cout << "if in dead polys: " << if_in_dead_polys << std::endl;
-std::cout << "if in visited polys: " << if_in_visited_polys << std::endl;
+// std::cout << "if in dead polys: " << if_in_dead_polys << std::endl;
+// std::cout << "if in visited polys: " << if_in_visited_polys << std::endl;
 				if (!if_in_dead_polys && !if_in_visited_polys){
 					GraphNode *new_node = new GraphNode();
 					Eigen::Vector3d replan_pts = polys_after_generation_[i][1].vertices_.rowwise().mean();
@@ -1154,12 +1152,12 @@ std::cout << "if in visited polys: " << if_in_visited_polys << std::endl;
 					new_node->dead_end_ = dead_end;
 					new_node->leading_ray_ = end_pos - start_pos;	// the leading ray is the direction from the start point to the end point
 					bool too_close = false;
-std::cout << "size of child nodes: " << node->child_.size() << std::endl;
+// std::cout << "size of child nodes: " << node->child_.size() << std::endl;
 					for ( int n = 0; n < node->child_.size(); n++){
 						// check leading_ray with existing child nodes, if too close do not add
 						Eigen::Vector3d child_leading_ray_unit_xy;
 						child_leading_ray_unit_xy << node->child_[n]->leading_ray_.normalized()(0), node->child_[n]->leading_ray_.normalized()(1), 0;
-std::cout << "cos of two rays: " << leading_ray_unit_xy.dot(child_leading_ray_unit_xy) << std::endl;
+// std::cout << "cos of two rays: " << leading_ray_unit_xy.dot(child_leading_ray_unit_xy) << std::endl;
 						// get the angle between the leading_ray and the leading_ray of the child node
 						if (leading_ray_unit_xy.dot(child_leading_ray_unit_xy) > 0.75){
 							too_close = true;
@@ -1205,7 +1203,7 @@ bool DynamicPlanManagerPOP::ifGoBackToParentCanGetLowerCost(GraphNode *node, int
 	// check if go back to parent can get lower cost
 	// if the cost of the parent is larger than the cost of the current node, return true
 	// else return false
-std::cout << "in ifGoBackToParentCanGetLowerCost" << std::endl;
+//std::cout << "in ifGoBackToParentCanGetLowerCost" << std::endl;
 	int index;
 	if(mode ==0){
 		index = 0;
@@ -1215,23 +1213,23 @@ std::cout << "in ifGoBackToParentCanGetLowerCost" << std::endl;
 	}
 
 	if (node->root == true){
-std::cout << "node is root" << std::endl;
+//std::cout << "node is root" << std::endl;
 		return false;
 	}
 	else{
 		if (node->parent_->child_.size() < 2 || node->child_.size() < 1){
-std::cout << "node->parent_->child_.size() < 2 || node->child_.size() < 1" << std::endl;
+//std::cout << "node->parent_->child_.size() < 2 || node->child_.size() < 1" << std::endl;
 			return false;
 		}
 
-std::cout << "node parent child_[1] is dead end or not: " << node->parent_->child_[1]->dead_end_ << std::endl;
-std::cout << "node child_[index] is dead end or not: " << node->child_[index]->dead_end_ << std::endl;
+//std::cout << "node parent child_[1] is dead end or not: " << node->parent_->child_[1]->dead_end_ << std::endl;
+//std::cout << "node child_[index] is dead end or not: " << node->child_[index]->dead_end_ << std::endl;
 		if(!node->child_[index]->dead_end_ && !node->parent_->child_[1]->dead_end_){
 			double current_cost = node->child_[index]->cost_to_goal_;
 			double back_cost = node->parent_->child_[1]->cost_to_goal_ + (node->replan_pos_ - node->parent_->replan_pos_).norm();
-std::cout << "current_cost: " << current_cost << "and back_cost: " << back_cost << "  and the difference is: " << current_cost - back_cost << std::endl;
+//std::cout << "current_cost: " << current_cost << "and back_cost: " << back_cost << "  and the difference is: " << current_cost - back_cost << std::endl;
 			if (current_cost > back_cost + 0.55){
-std::cout << "go back to parent" << endl;
+//std::cout << "go back to parent" << endl;
 				return true;
 			}
 			else{
@@ -1239,7 +1237,7 @@ std::cout << "go back to parent" << endl;
 			}
 		}
 		else{
-std::cout << "one of the node is dead end" << std::endl;
+//std::cout << "one of the node is dead end" << std::endl;
 			return false;
 		}
 	}
@@ -1269,7 +1267,7 @@ void DynamicPlanManagerPOP::updateCurrentNode(GraphNode *&node, std::vector<Eige
 				all_dead_end = false;
 				if (!backtrackFlag_){
 					if (!childNode->visited_){
-std::cout << i << "th child is choose" << std::endl;
+//std::cout << i << "th child is choose" << std::endl;
 						node = childNode;
 						all_visited = false;
 						break;
@@ -1284,7 +1282,7 @@ std::cout << i << "th child is choose" << std::endl;
 			}
 		}
 		if (all_visited){
-std::cout << "all visited" << std::endl;
+//std::cout << "all visited" << std::endl;
 			for (unsigned int i = 0; i < node->child_.size(); ++i){
 				if (!node->child_[i]->dead_end_){
 					GraphNode *childNode = node->child_[i];
@@ -1310,12 +1308,12 @@ std::cout << "all visited" << std::endl;
 }
 
 void DynamicPlanManagerPOP::getPolysForBackTrack(Eigen::Vector3d start_pos, Eigen::Vector3d end_pos, vec_E<Polyhedron3D> &polys_){
-std::cout << "in getPolysForBackTrack" << std::endl;
+//std::cout << "in getPolysForBackTrack" << std::endl;
 	Eigen::Vector3d pos1, pos2, pos3, pos4;
-std::cout << "start_pos: " << start_pos.transpose() << std::endl;
-std::cout << "end_pos: " << end_pos.transpose() << std::endl;
+//std::cout << "start_pos: " << start_pos.transpose() << std::endl;
+//std::cout << "end_pos: " << end_pos.transpose() << std::endl;
 	Eigen::Vector3d dir = end_pos - start_pos;
-std::cout << "dir: " << dir.transpose() << std::endl;
+//std::cout << "dir: " << dir.transpose() << std::endl;
 	pos1 = start_pos + 0.1 * dir;
 	pos2 = start_pos + 0.6 * dir;
 	pos3 = start_pos + 0.5 * dir;
@@ -1371,7 +1369,7 @@ std::cout << "dir: " << dir.transpose() << std::endl;
 
 	polys_test_.push_back(poly1);
 	polys_test_.push_back(poly2);
-std::cout << "size of polys_test_: " << polys_test_.size() << std::endl;
+//std::cout << "size of polys_test_: " << polys_test_.size() << std::endl;
 	decomp_ros_msgs::PolyhedronArray poly_msg = DecompROS::polyhedron_array_to_ros(polys_test_);
 	poly_msg.header.frame_id = "odom";
 	poly_pub_.publish(poly_msg);
@@ -1381,7 +1379,7 @@ void DynamicPlanManagerPOP::decomposePolys(){
 	polys_.clear();
     points_for_poly_.clear();
 	points_for_decompose_.clear();
-// std::cout << "size of interest_points_: " << interest_points_.size() << std::endl;
+// //std::cout << "size of interest_points_: " << interest_points_.size() << std::endl;
 	if (interest_points_.size() > 1){
 
         for (unsigned int i = 0; i < interest_points_.size()/2; ++i){
@@ -1410,9 +1408,9 @@ void DynamicPlanManagerPOP::decomposePolys(){
             const Vec3f pos4_v(pos4[0], pos4[1], pos4[2]);
             const Vec3f pos5_v(pos5[0], pos5[1], pos5[2]);
             const Vec3f pos6_v(pos6[0], pos6[1], pos6[2]);
-    // std::cout << "pos1: " << pos1.transpose() << " pos2: " << pos2.transpose() << std::endl;
-    // std::cout << "pos3: " << pos3.transpose() << " pos4: " << pos4.transpose() << std::endl;
-    // std::cout << "pos5: " << pos5_v.transpose() << " pos6: " << pos6_v.transpose() << std::endl;
+    // //std::cout << "pos1: " << pos1.transpose() << " pos2: " << pos2.transpose() << std::endl;
+    // //std::cout << "pos3: " << pos3.transpose() << " pos4: " << pos4.transpose() << std::endl;
+    // //std::cout << "pos5: " << pos5_v.transpose() << " pos6: " << pos6_v.transpose() << std::endl;
             LineSegment3D decomp_util1(pos1_v,pos2_v);
             decomp_util1.set_obs(obs3d_odom_);
             decomp_util1.set_local_bbox(Vec3f(0.7, 0.4, 0.5));
@@ -1501,12 +1499,12 @@ void DynamicPlanManagerPOP::getCenterListForNode(GraphNode *&node){
 	Eigen::MatrixX4d hPoly;
 	hPoly.resize(poly1_num_facets + poly2_num_facets, 4);
 	Eigen::Matrix3Xd vPoly;
-// std::cout << "hPoly already resized" << std::endl;
+// //std::cout << "hPoly already resized" << std::endl;
 	auto A1 = node->polys_[0].lc_.A();
 	auto b1 = node->polys_[0].lc_.b();
 	auto A2 = node->polys_[1].lc_.A();
 	auto b2 = node->polys_[1].lc_.b();
-// std::cout << "A and b already got" << std::endl;
+// //std::cout << "A and b already got" << std::endl;
 	// put A1 and A2 b1 and b2 into hPoly
 	for (int j = 0; j < poly1_num_facets; ++j)
 	{
@@ -1526,7 +1524,7 @@ void DynamicPlanManagerPOP::getCenterListForNode(GraphNode *&node){
 	for (int i = 2; i < node->polys_.size(); ++i){
 		node->center_list_.push_back(node->polys_[i].vertices_.rowwise().mean());
 	}
-std::cout << "center list size: " << node->center_list_.size() << std::endl;
+//std::cout << "center list size: " << node->center_list_.size() << std::endl;
 }
 
 void DynamicPlanManagerPOP::getDeadEndPoly(Polyhedron3D &poly, Eigen::Vector3d pos){

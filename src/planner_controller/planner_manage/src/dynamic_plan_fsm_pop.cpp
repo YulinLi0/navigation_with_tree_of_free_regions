@@ -435,7 +435,6 @@ std::cout << "backtrack flag is true" << endl;
 std::cout << "back check done" << endl;
             if(!planner_manager_->backtrackFlag_){
                 success = planner_manager_->planGlobalPath(planner_manager_->current_node_, start_pos_, end_pos_);
-std::cout << "size of polys_deadend 111: " << planner_manager_->polys_deadend_.size() << endl;
                 // only need first two polyhedrons in current node
                 vec_E<Polyhedron3D> first_two_polys;
                 first_two_polys.push_back(planner_manager_->current_node_->polys_[0]);
@@ -503,8 +502,6 @@ std::cout << "backtrack flag is true" << endl;
             }
             if(!planner_manager_->backtrackFlag_){
                 success = planner_manager_->planGlobalPath(planner_manager_->current_node_, start_pos_, end_pos_);
-                
-std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!1size of polys_deadend!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: " << planner_manager_->polys_deadend_.size() << endl;
                 // only need first two polyhedrons in current node
                 vec_E<Polyhedron3D> first_two_polys;
                 first_two_polys.push_back(planner_manager_->current_node_->polys_[0]);
@@ -518,7 +515,6 @@ std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!1size of polys_deadend!!!!!!!!!!!!!!!!
 
         if (planner_manager_->backtrackFlag_){
 //             polys_sorted_.clear();
-std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!size of polys_deadend!!!!!!!!!!!!!!!!!!!!!!!!!!!!: " << planner_manager_->polys_deadend_.size() << endl;
 //             planner_manager_->getPolysForBackTrack(odom_pos_, planner_manager_->global_graph_ptr_->points_for_backtrack_[0], polys_sorted_);
 //             cost_to_goal_sorted_.push_back(1);
 //             planner_manager_->generatePolyhedronAtIntersection(polys_sorted_, planner_manager_->backtrack_node_, cost_to_goal_sorted_);
@@ -569,7 +565,6 @@ std::cout << "back track nodes's center list[2]: " << planner_manager_->backtrac
 
         if (success){
             getTrajByALTRO();
-std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!size of polys_deadend!!!!!!!!!!!!!!!!!!!!!!!!!!!!: " << planner_manager_->polys_deadend_.size() << endl;
             // planner_manager_->planFromCurrentTraj(planning_distance_, odom_pos_);
             // planner_manager_->local_traj_data_.getRefTraj(local_traj_list_);
             visualizePath(planner_manager_->global_data_.getGlobalPath(), vis_global_plan_pub_); // visualize global path
