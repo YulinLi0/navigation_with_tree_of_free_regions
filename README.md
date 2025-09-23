@@ -104,6 +104,7 @@ A[0]  << 1, 0  , 0,
             0, 0  , -1;
 b[0] << 0.38, 0.42, 0.22, 0.22, 0.10, 0.10;
 ```
+4. in rviz, change the RobotModel name (``Robot Description``) to your own.
 
 
 
